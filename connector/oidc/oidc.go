@@ -408,6 +408,32 @@ func (c *oidcConnector) createIdentity(ctx context.Context, identity connector.I
 		if err := idToken.Claims(&claims); err != nil {
 			return identity, fmt.Errorf("oidc: failed to decode claims: %v", err)
 		}
+
+		// Load claims from the AccessToken
+		if len(token.AccessToken) > 0 {
+
+			fmt.Println("Verifying and parsing the access token")
+
+			accToken, err := c.provider.Verifier(&oidc.Config{SkipClientIDCheck: true}).Verify(ctx, token.AccessToken)
+			if err != nil {
+				return identity, fmt.Errorf("oidc: failed to verify access token: %v", err)
+			}
+
+			fmt.Println("Loading the scope claim")
+
+			var claimsAT map[string]interface{}
+			if err := accToken.Claims(&claimsAT); err != nil {
+				return identity, fmt.Errorf("oidc: failed to decode access token claims: %v", err)
+			}
+			var scope string
+			scope, found := claimsAT["scope"].(string)
+			if !found {
+				fmt.Println("Missing scope claim")
+			}
+			fmt.Println("Adding the scope claim to handled claims")
+			claims["scope"] = scope
+		}
+
 	} else if caller == exchangeCaller {
 		switch token.TokenType {
 		case "urn:ietf:params:oauth:token-type:id_token":
