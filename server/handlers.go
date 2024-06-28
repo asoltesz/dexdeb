@@ -403,6 +403,9 @@ func (s *Server) handlePasswordLogin(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleConnectorCallback(w http.ResponseWriter, r *http.Request) {
+
+	fmt.Println("handleConnectorCallback(): START")
+
 	ctx := r.Context()
 	var authID string
 	switch r.Method {
@@ -495,6 +498,9 @@ func (s *Server) handleConnectorCallback(w http.ResponseWriter, r *http.Request)
 		s.sendCodeResponse(w, r, authReq)
 		return
 	}
+
+	fmt.Println("handleConnectorCallback(): END")
+	fmt.Println("redirecting to:", redirectURL)
 
 	http.Redirect(w, r, redirectURL, http.StatusSeeOther)
 }
@@ -788,6 +794,9 @@ func (s *Server) sendCodeResponse(w http.ResponseWriter, r *http.Request, authRe
 }
 
 func (s *Server) withClientFromStorage(w http.ResponseWriter, r *http.Request, handler func(http.ResponseWriter, *http.Request, storage.Client)) {
+
+	fmt.Println("withClientFromStorage: START")
+
 	clientID, clientSecret, ok := r.BasicAuth()
 	if ok {
 		var err error
@@ -825,6 +834,8 @@ func (s *Server) withClientFromStorage(w http.ResponseWriter, r *http.Request, h
 		return
 	}
 
+	fmt.Println("withClientFromStorage: END")
+
 	handler(w, r, client)
 }
 
@@ -848,6 +859,9 @@ func (s *Server) handleToken(w http.ResponseWriter, r *http.Request) {
 		s.tokenErrHelper(w, errUnsupportedGrantType, "", http.StatusBadRequest)
 		return
 	}
+
+	fmt.Println("handleToken(). grantType: ", grantType)
+
 	switch grantType {
 	case grantTypeDeviceCode:
 		s.handleDeviceToken(w, r)
@@ -878,6 +892,9 @@ func (s *Server) calculateCodeChallenge(codeVerifier, codeChallengeMethod string
 
 // handle an access token request https://tools.ietf.org/html/rfc6749#section-4.1.3
 func (s *Server) handleAuthCode(w http.ResponseWriter, r *http.Request, client storage.Client) {
+
+	fmt.Println("handleAuthCode(): START")
+
 	ctx := r.Context()
 	code := r.PostFormValue("code")
 	redirectURI := r.PostFormValue("redirect_uri")
@@ -934,6 +951,10 @@ func (s *Server) handleAuthCode(w http.ResponseWriter, r *http.Request, client s
 		s.tokenErrHelper(w, errServerError, "", http.StatusInternalServerError)
 		return
 	}
+
+	fmt.Println("TokenResponse:")
+	fmt.Println(tokenResponse)
+
 	s.writeAccessToken(w, tokenResponse)
 }
 
@@ -1343,6 +1364,9 @@ func (s *Server) handlePasswordGrant(w http.ResponseWriter, r *http.Request, cli
 }
 
 func (s *Server) handleTokenExchange(w http.ResponseWriter, r *http.Request, client storage.Client) {
+
+	fmt.Println("handleTokenExchange(): START")
+
 	ctx := r.Context()
 
 	if err := r.ParseForm(); err != nil {
@@ -1425,6 +1449,11 @@ func (s *Server) handleTokenExchange(w http.ResponseWriter, r *http.Request, cli
 	w.Header().Set("Cache-Control", "no-store")
 	w.Header().Set("Pragma", "no-cache")
 	w.Header().Set("Content-Type", "application/json")
+
+	fmt.Println("handleTokenExchange(): END")
+	fmt.Println("token response:")
+	fmt.Println(resp)
+
 	json.NewEncoder(w).Encode(resp)
 }
 
